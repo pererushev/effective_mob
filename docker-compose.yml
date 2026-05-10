@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8002:8002"
+    volumes:
+      - sqlite_data:/var/www/html/database
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_CONNECTION: sqlite
+
+volumes:
+  sqlite_data:
