@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Task;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,7 +19,21 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(function (Request $request, \Throwable $e) {
+        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+            if (! $request->is('tasks') && ! $request->is('tasks/*')) {
+                return null;
+            }
+
+            if ($e->getModel() !== Task::class) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => 'Task not found.',
+            ], 404);
+        });
+
+        $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $e) {
             return $request->is('tasks') || $request->is('tasks/*');
         });
     })->create();
