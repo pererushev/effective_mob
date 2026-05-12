@@ -1,58 +1,95 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# API задач (Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+REST API для управления задачами: создание, просмотр, обновление и удаление записей в SQLite. Сборка рассчитана на **PHP 8.3** и **Laravel 13**.
 
-## About Laravel
+## Возможности
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- CRUD по сущности «задача» (`title`, опционально `description`, `status`).
+- Валидация статусов при создании и обновлении.
+- Маршруты доступны с префиксом `/api/...` и дублируются без префикса (`/tasks` — то же самое, что `/api/tasks`).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Требования
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Вариант | Что нужно |
+|--------|-----------|
+| Docker | Docker и Docker Compose |
+| Локально | PHP 8.3 с расширением `pdo_sqlite`, Composer |
 
-## Learning Laravel
+## Запуск в Docker
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Из корня репозитория:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+docker compose up --build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+После старта контейнер:
 
-## Contributing
+- поднимает `php artisan serve` на порту **8002** внутри контейнера;
+- создаёт при необходимости `database/database.sqlite` в томе;
+- выполняет миграции при каждом запуске.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Приложение с хоста: **http://localhost:8002**
 
-## Code of Conduct
+Проверка живости Laravel: **http://localhost:8002/up**
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Локальный запуск без Docker
 
-## Security Vulnerabilities
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+По умолчанию сервер слушает **http://127.0.0.1:8000**. При необходимости укажите порт: `php artisan serve --port=8002`.
 
-## License
+Убедитесь, что в `.env` задано `DB_CONNECTION=sqlite` и при необходимости `DB_DATABASE` указывает на файл SQLite (для типового `.env.example` достаточно пустого `DB_DATABASE` и файла `database/database.sqlite`).
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## API (кратко)
+
+Базовые URL (пример для Docker на порту 8002):
+
+- `GET    http://localhost:8002/api/tasks` — список задач
+- `POST   http://localhost:8002/api/tasks` — создать задачу
+- `GET    http://localhost:8002/api/tasks/{id}` — одна задача
+- `PUT` / `PATCH http://localhost:8002/api/tasks/{id}` — обновить
+- `DELETE http://localhost:8002/api/tasks/{id}` — удалить
+
+Те же пути без префикса `api`: `/tasks`, `/tasks/{id}`.
+
+### Создание задачи (`POST`)
+
+Тело JSON:
+
+```json
+{
+  "title": "Название",
+  "description": "Описание (необязательно)",
+  "status": "new"
+}
+```
+
+Допустимые значения `status` при **создании**: `new`, `pending`, `in_progress`, `completed`.
+
+### Обновление (`PUT` / `PATCH`)
+
+Поля опциональны, но если передаёте `status`, допустимы только: `pending`, `in_progress`, `completed` (без `new`).
+
+## Тесты
+
+```bash
+composer test
+```
+
+или
+
+```bash
+php artisan test
+```
+
+## Лицензия
+
+Проект основан на шаблоне Laravel; фреймворк распространяется под [лицензией MIT](https://opensource.org/licenses/MIT).
